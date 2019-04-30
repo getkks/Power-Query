@@ -68,7 +68,8 @@ let
 			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) = 1 then
 						Table.Range(#"Expanded WorkBook",SheetorTableName{0},1)
 			else #"Expanded WorkBook"
-		otherwise #"Expanded WorkBook",
+		otherwise
+			#"Expanded WorkBook",
 	
 	#"Filtered Sheet or Table" =
 		try
