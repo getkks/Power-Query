@@ -1,7 +1,8 @@
 (Source as table, Indices as list, ColumnNamesNew as list) =>
 let
-    ColumnNamesOld = List.Transform( Indices, each Table.ColumnNames(Source){_} ), 
-    ZippedList = List.Zip( { ColumnNamesOld, ColumnNamesNew } ),
-    #"Renamed Columns" = Table.RenameColumns( Source, ZippedList )
+	ColumnNames = Table.ColumnNames(Source),
+	ColumnNamesList = List.Transform( Indices, each ColumnNames{_} ), 
+	ZippedList = List.Zip( { ColumnNamesList, ColumnNamesNew } ),
+	#"Renamed Columns" = Table.RenameColumns( Source, ZippedList )
 in
-    #"Renamed Columns"
+	#"Renamed Columns"

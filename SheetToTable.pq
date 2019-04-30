@@ -2,7 +2,7 @@
 let
     BlankandNull = (Value,optional NullandBlank) =>
         let
-            NullandBlank = if NullandBlank = null then false else NullandBlank,
+            NullandBlank = if NullandBlank = null then true else NullandBlank,
             Result = if NullandBlank then Value <> null and Value <> "" else Value <> null
         in
             Result,
