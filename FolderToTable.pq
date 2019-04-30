@@ -64,7 +64,8 @@ let
 			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) = 2 then
 				Table.Range(#"Expanded WorkBook",SheetorTableName{0},SheetorTableName{1})
 			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) > 2 then
-					F[SelectListOfRows](#"Expanded WorkBook") else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName)=1 then
+					F[SelectListOfRows](#"Expanded WorkBook")
+			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) = 1 then
 						Table.Range(#"Expanded WorkBook",SheetorTableName{0},1)
 			else #"Expanded WorkBook"
 		otherwise #"Expanded WorkBook",
