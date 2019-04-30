@@ -1,4 +1,8 @@
-(Source as table, MappingTable as table, FromColumn as text, optional ToColumn as text) =>
+(Source as table,
+	MappingTable as table,
+	FromColumn as text,
+	optional ToColumn as text) =>
+
 let
 	ToColumn = if ToColumn = null then "Output Column Name" else ToColumn,// otherwise "Output Column Name",
 	#"Filtered Rows" = Table.SelectRows(MappingTable, each (Record.Field(_, FromColumn) <> null and Record.Field(_, ToColumn) <> null)),

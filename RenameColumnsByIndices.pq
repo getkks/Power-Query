@@ -1,4 +1,7 @@
-(Source as table, Indices as list, ColumnNamesNew as list) =>
+(Source as table,
+	Indices as list,
+	ColumnNamesNew as list) =>
+	
 let
 	ColumnNames = Table.ColumnNames(Source),
 	ColumnNamesList = List.Transform( Indices, each ColumnNames{_} ), 
