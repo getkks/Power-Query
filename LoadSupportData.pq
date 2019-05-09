@@ -1,21 +1,26 @@
-(FileName as text) as record =>
+() as record =>
 let
 	Source = Excel.Workbook(
 		Binary.Buffer(
-			File.Contents(FileName)),
+			File.Contents(P[Support File])),
 		null, true),
 
-	#"Filtered Table" = Table.SelectRows(Source, each ([Kind] = "Table")),
+	#"Filtered Table" = Table.SelectRows(Source, each ([Kind] = "Table" and [Name] <> "tblSupportData")),
 
 	Selector = 
 		(TableName as text) => 
-			Table.SelectRows(
-				Source{[Name="tblSupportData"]}[Content], each [Name] = TableName),
+			try Table.SelectRows(
+				Source{[Name="tblSupportData"]}[Data], each [Name] = TableName)
+			otherwise
+				Table.FromColumns({
+					Table.ColumnNames(Source{[Name=TableName]}[Data]),
+					Table.ColumnNames(Source{[Name=TableName]}[Data])},
+					{"Column Name", "Output Column Name"}),
 
 	#"Choose and Rename" = Table.AddColumn(
 		#"Filtered Table", "Value",
 			each F[RenameColumnsByMapping](
-				[Content], Selector([Name]), "Column Name")),
+				[Data], Selector([Name]), "Column Name")),
 
 	#"To Record" = Record.FromTable(#"Choose and Rename")
 in

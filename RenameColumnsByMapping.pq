@@ -12,7 +12,7 @@ let
 			ToColumn,// otherwise "Output Column Name",
 	TypeColumn  =
 		if TypeColumn = null then
-			"Type"
+			"Type Name"
 		else
 			TypeColumn,
 	#"Filtered Rows" = Table.SelectRows(MappingTable, each (
@@ -25,12 +25,26 @@ let
 		Table.Column(#"Filtered Rows", FromColumn),
 		Table.Column(#"Filtered Rows", ToColumn)),
 
+	Type = List.Contains(Table.ColumnNames(#"Filtered Rows"),TypeColumn),
+
+	Merged = 
+		if Type then
+			Table.ExpandTableColumn(
+				Table.NestedJoin(
+					#"Filtered Rows", {TypeColumn},
+					F[TypeMapping], {"Type Name"},
+					"Type",
+					JoinKind.LeftOuter),
+				"Type", {"Type"})
+		else
+			#"Choose and Rename Columns",
+
 	Typed =
-		if List.Contains(Table.ColumnNames(#"Filtered Rows"),TypeColumn) then
+		if Type then
 			Table.TransformColumnTypes(#"Choose and Rename Columns",
 				List.Zip({
-					Table.Column(#"Filtered Rows", ToColumn),
-					Table.Column(#"Filtered Rows", TypeColumn)}))
+					Table.Column(Merged, ToColumn),
+					Table.Column(Merged, "Type")}))
 		else
 			#"Choose and Rename Columns"
 in
