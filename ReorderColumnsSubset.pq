@@ -1,4 +1,5 @@
-(tbl as table,
+(
+	tbl as table,
 	reorderedColumns as list,
 	offset as number) as table =>
 

@@ -1,4 +1,9 @@
-(Source as table, Exceptions as table, Columns as any, optional ToColumns as any, optional Filter as logical) =>
+(
+	Source as table,
+	Exceptions as table,
+	Columns as any,
+	optional ToColumns as any,
+	optional Filter as logical) =>
 let
 //	  Error = if not (Value.Is(Columns, type list) or Value.Is(Columns, type text)) then error "Function FilterExceptions: => Columns should be either list of column names or a single column name (text)." else null,
 	ColumnList = Value.Is(Columns, type list),

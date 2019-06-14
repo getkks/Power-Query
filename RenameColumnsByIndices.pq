@@ -1,4 +1,5 @@
-(Source as table,
+(
+	Source as table,
 	Indices as list,
 	ColumnNamesNew as list) =>
 	

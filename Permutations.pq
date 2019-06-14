@@ -1,4 +1,5 @@
-(prmList as list) as table =>
+(
+	prmList as list) as table =>
 let
 	Ordinal = List.Numbers(1,List.Count(prmList)),
 	Permutations = List.Transform(Ordinal,each F[SpecificPermutation](prmList,_)),

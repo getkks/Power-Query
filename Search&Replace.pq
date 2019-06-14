@@ -1,4 +1,5 @@
-(Source as table,
+(
+	Source as table,
 	KeyValue as table,
 	SearchColumn as nullable any) =>
 

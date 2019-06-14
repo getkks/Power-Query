@@ -1,7 +1,7 @@
-(Source as table,
+(
+	Source as table,
 	From as list,
-	To as list
-) as table =>
+	To as list) as table =>
 	List.Accumulate(
 		List.Zip({From, To}),
 		Source,

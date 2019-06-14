@@ -10,7 +10,7 @@ let
 			"Output Column Name"
 		else
 			ToColumn,// otherwise "Output Column Name",
-	TypeColumn  =
+	TypeColumn	=
 		if TypeColumn = null then
 			"Type Name"
 		else

@@ -1,4 +1,5 @@
-(tblData as table,
+(
+	tblData as table,
 	Columns as list,
 	optional Or as logical) =>
 let

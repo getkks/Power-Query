@@ -1,4 +1,5 @@
-(FolderName as text, 
+(
+	FolderName as text, 
 	optional FileName as text,
 	optional SheetorTableName as any,
 	optional PreFilter as function,

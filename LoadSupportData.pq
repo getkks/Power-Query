@@ -1,4 +1,3 @@
-() as record =>
 let
 	Source = Excel.Workbook(
 		Binary.Buffer(
