@@ -1,7 +1,11 @@
+(
+	optional FilePath as text) as record =>
 let
+	FilePath = if FilePath = null then P[Support File] else FilePath,
+
 	Source = Excel.Workbook(
 		Binary.Buffer(
-			File.Contents(P[Support File])),
+			File.Contents(FilePath)),
 		null, true),
 
 	#"Filtered Table" = Table.SelectRows(Source, each ([Kind] = "Table" and [Name] <> "tblSupportData")),
