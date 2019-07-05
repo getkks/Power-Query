@@ -7,6 +7,11 @@ let
 	#"Sheet to Table" = Table.TransformColumns(Source,{
 		{"WorkSheet", F[SheetToTable], type table}}),
 
-	#"Expanded WorkSheet" = F[ExpandColumn](#"Sheet to Table", "WorkSheet")
+	#"Expanded WorkSheet" = F[ExpandColumn](#"Sheet to Table", "WorkSheet"),
+
+	#"Choose and Rename Columns" = F[RenameColumnsByMapping](
+		#"Expanded WorkSheet",
+		S[tblColumnMapping],
+		"In")
 in
-	#"Expanded WorkSheet"
+	#"Choose and Rename Columns"
