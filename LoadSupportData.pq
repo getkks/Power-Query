@@ -20,11 +20,12 @@ let
 					Table.ColumnNames(Source{[Name=TableName]}[Data])},
 					{"Column Name", "Output Column Name"}),
 
-	#"Choose and Rename" = Table.AddColumn(
+	#"Choose and Rename" = Table.Buffer(Table.AddColumn(
 		#"Filtered Table", "Value",
 			each F[RenameColumnsByMapping](
-				[Data], Selector([Name]), "Column Name")),
+				[Data], Selector([Name]), "Column Name"))),
 
-	#"To Record" = Record.FromTable(#"Choose and Rename")
+	#"To Record" = 
+		Record.FromTable(#"Choose and Rename")
 in
 	#"To Record"

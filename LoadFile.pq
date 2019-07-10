@@ -1,0 +1,113 @@
+(
+	FolderName as text,
+	optional Options as record
+	) as table =>
+/*
+Parameters
+----------
+FolderName -> Folder path for traversing.
+Recursive -> Default value is false. True will force the folder to be traversed recursively (all sub directories).
+tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
+tblExtension -> Table with a column named Extension to filter out only required extensions.
+Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting.
+*/
+let
+	Source =
+		try
+			Table.FirstValue(Excel.CurrentWorkbook(){[Name=FolderName]}[Content])
+		otherwise
+			FolderName,
+
+	OpenFolder =
+		if Record.FieldOrDefault(Options, "Recursive", false) then
+			Folder.Files(Source)
+		else
+			Folder.Contents(Source),
+
+	#"Choose and Rename Columns In" = F[RenameColumnsByMapping](
+		OpenFolder,
+		Record.FieldOrDefault(
+			Options,
+			"Column Mapping",
+			F[tblColumnMapping]),
+		"In"),
+
+	#"Filtered Known Extensions" = Table.FuzzyJoin(
+		#"Choose and Rename Columns In", {"Extension"},
+		Record.FieldOrDefault(
+			Options,
+			"Extension",
+			F[tblExtension]), {"Extension"},
+		JoinKind.Inner, [
+			NumberOfMatches = 1,
+			Threshold = 1,
+			ConcurrentRequests = 4]),
+
+	FilterOpenFiles = Table.SelectRows(#"Filtered Known Extensions", each
+			(if FileName <> null then
+				Text.Contains([File Name], FileName, Comparer.OrdinalIgnoreCase)
+			else
+				true)
+		and
+			(not Text.StartsWith([File Name], "~$"))),
+
+	#"Sort by Import Date" = Table.Sort(FilterOpenFiles,{{"Import Date", Order.Descending}}),
+
+	#"Apply PreFilter" = if Record.FieldOrDefault(Options, "Filter") <> null then
+			Record.FieldOrDefault(Options, "Filter")(#"Sort by Import Date")
+		else
+			Table.FirstN(#"Sort by Import Date",1),
+	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
+
+	#"Choose and Rename Columns In2" = F[RenameColumnsByMapping](
+		#"Expanded Attributes",
+		Record.FieldOrDefault(
+			Options,
+			"Column Mapping",
+			F[tblColumnMapping]),
+		"In2"),
+
+	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each 
+		Text.StartsWith([File Type], "Excel"),
+		type logical),
+
+	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each 
+			Text.StartsWith([File Type], "CSV")
+		or
+			Text.StartsWith([File Type], "Text"),
+		type logical),
+
+	#"Load WorkBook" = Table.AddColumn(#"Added is CSV", "WorkBook", each
+			if [Excel] then 
+				Excel.Workbook([Content])
+			else if [CSV] then
+				try
+					#table(
+						type table
+						[
+							Name = text, 
+							Data = table,
+							Item = text,
+							Kind = text,
+							Hidden = logical
+						],
+						{
+							{null, Csv.Document([Content]), null, "Text Document", false}
+						})
+				otherwise
+					null
+			else
+				null,
+		type table),
+
+    #"Expanded WorkBook" = Table.ExpandTableColumn(#"Load WorkBook", "WorkBook", {"Name", "Data", "Item", "Kind", "Hidden"}, {"Name", "Data", "Item", "Kind", "Hidden Sheet"}),
+
+	#"Choose and Rename Columns Out" = F[RenameColumnsByMapping](
+		#"Expanded WorkBook",
+		Record.FieldOrDefault(
+			Options,
+			"Column Mapping",
+			F[tblColumnMapping]),
+		"Out")
+in
+	#"Choose and Rename Columns Out"

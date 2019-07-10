@@ -7,7 +7,7 @@
 	optional Fold as logical) =>
 
 let
-	Source = 
+	Source =
 		try
 			Folder.Files(FolderName)
 		otherwise
@@ -31,11 +31,11 @@ let
 
 	Sort = Table.Sort(FilterOpenFiles ,{{"Import Date", Order.Descending}}),
 
-	PreFiltered =
+	PreFiltered = Table.Buffer(
 		if PreFilter<> null then
 			PreFilter(Sort) 
 		else
-			Table.FirstN(Sort,1),
+			Table.FirstN(Sort,1)),
 
 	OpenWorkBooks = Table.AddColumn(PreFiltered, "WorkBook", each
 		if [Attributes][Kind] = "Excel File" then 

@@ -26,4 +26,6 @@
 		{ null, type any},
 		{ "List", type list},
 		{ "Record", type record},
-		{ "Guid", Guid.Type}})
+		{ "Guid", Guid.Type},
+		{ "Binary", type binary},
+		{ "Table", type table}})

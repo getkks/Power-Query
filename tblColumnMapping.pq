@@ -1,0 +1,38 @@
+#table(
+	type table
+	[
+		In = text,
+		In2 = text,
+		Out = text,
+		#"Output Column Name" = text,
+		#"Type Name" = text
+	],
+	{
+		{ "Date created" , "Import Date" , "Import Date" , "Import Date" , "DateTime"},
+		{ "Name" , "File Name" , "File Name" , "File Name" , "Text"},
+		{ null , "Kind" , "File Type" , "File Type" , "Text"},
+		{ null , "Size" , "Size" , "Size" , "Number"},
+		{ null , null , "Name" , "Sheet Name" , "Text"},
+		{ null , null , "Kind" , "Kind" , "Text"},
+		{ "Extension" , "Extension" , null , "Extension" , "Text"},
+		{ "Content" , "Content" , null , "Content" , null},
+		{ "Date accessed" , "Date accessed" , null , "Date accessed" , "DateTime"},
+		{ "Date modified" , "Date modified" , null , "Date modified" , "DateTime"},
+		{ null , "Content Type" , null , "Content Type" , "Text"},
+		{ "Folder Path" , "Folder Path" , null , "Folder Path" , "Text"},
+		{ "Attributes" , null , null , "Attributes" , null},
+		{ null , "ReadOnly" , null , "ReadOnly" , "Boolean"},
+		{ null , "Hidden" , null , "Hidden" , "Boolean"},
+		{ null , "System" , null , "System" , "Boolean"},
+		{ null , "Directory" , null , "Directory" , "Boolean"},
+		{ null , "Archive" , null , "Archive" , "Boolean"},
+		{ null , "Device" , null , "Device" , "Boolean"},
+		{ null , "Normal" , null , "Normal" , "Boolean"},
+		{ null , "Temporary" , null , "Temporary" , "Boolean"},
+		{ null , "SparseFile" , null , "SparseFile" , "Boolean"},
+		{ null , "ReparsePoint" , null , "ReparsePoint" , "Boolean"},
+		{ null , "Compressed" , null , "Compressed" , "Boolean"},
+		{ null , "Offline" , null , "Offline" , "Boolean"},
+		{ null , "NotContentIndexed" , null , "NotContentIndexed" , "Boolean"},
+		{ null , "Encrypted" , null , "Encrypted" , "Boolean"},
+		{ null , null , "Data" , "WorkSheet" , "Table"}})
