@@ -1,3 +1,4 @@
+/*
 #table(
 	type table
 	[
@@ -8,3 +9,5 @@
 		{ "xlsm" },
 		{ "xlsx" },
 		{ "csv" }})
+*/
+{  "xls" ,  "xlsb", "xlsm", "xlsx", "csv" }

@@ -1,22 +1,20 @@
 (
-	FolderName as text,
+	optional FolderName as text,
 	optional Options as record
 	) as table =>
 /*
 Parameters
 ----------
 FolderName -> Folder path for traversing.
+Data Path -> Default folder path for traversing
+File Name -> Full or Partial Name of the file to locate.
 Recursive -> Default value is false. True will force the folder to be traversed recursively (all sub directories).
 tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
-tblExtension -> Table with a column named Extension to filter out only required extensions.
+Extension -> List to filter into required file extensions.
 Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting.
 */
 let
-	Source =
-		try
-			Table.FirstValue(Excel.CurrentWorkbook(){[Name=FolderName]}[Content])
-		otherwise
-			FolderName,
+	Source = if FolderName = null then Record.FieldOrDefault(Options, "Data Path", false) else FolderName,
 
 	OpenFolder =
 		if Record.FieldOrDefault(Options, "Recursive", false) then
@@ -32,16 +30,19 @@ let
 			F[tblColumnMapping]),
 		"In"),
 
+	tblExtension = Table.FromColumns({
+		Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
+		type table[Extension =text]),
+
 	#"Filtered Known Extensions" = Table.FuzzyJoin(
 		#"Choose and Rename Columns In", {"Extension"},
-		Record.FieldOrDefault(
-			Options,
-			"Extension",
-			F[tblExtension]), {"Extension"},
+		tblExtension, {"Extension"},
 		JoinKind.Inner, [
 			NumberOfMatches = 1,
 			Threshold = 1,
 			ConcurrentRequests = 4]),
+
+	FileName = Record.FieldOrDefault(Options, "File Name"),
 
 	FilterOpenFiles = Table.SelectRows(#"Filtered Known Extensions", each
 			(if FileName <> null then

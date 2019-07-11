@@ -1,8 +1,6 @@
 let
-	Source = F[FolderToTable](
-		P[Data Path],
-		"",
-		0),
+	Source = F[LoadFile](
+		P[Data Path]),
 
 	#"Sheet to Table" = Table.TransformColumns(Source,{
 		{"WorkSheet", F[SheetToTable], type table}}),
