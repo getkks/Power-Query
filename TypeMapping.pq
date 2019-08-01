@@ -1,7 +1,7 @@
 #table(
 	type table
 	[
-		#"Type Name" = text, 
+		#"Type Name" = text,
 		Type = type
 	],
 	{
@@ -28,4 +28,11 @@
 		{ "Record", type record},
 		{ "Guid", Guid.Type},
 		{ "Binary", type binary},
-		{ "Table", type table}})
+		{ "Table", type table},
+		{"Int8", Int8.Type},
+		{"UInt8", Byte.Type},
+		{"Int16", Int16.Type},
+		{"Int32", Int32.Type},
+		{"Int64", Int64.Type},
+		{"Single", Single.Type},
+		{"Double", Double.Type}})

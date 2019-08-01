@@ -5,6 +5,7 @@
 	optional TypeColumn as text) =>
 
 let
+	Source = F[CleanColumnNames](Source),
 	ToColumn =
 		if ToColumn = null then
 			"Output Column Name"
