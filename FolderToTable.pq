@@ -24,6 +24,8 @@ let
 			true)
 		and
 			not Text.Contains([File Name], "~$")
+		and
+			[Extension] <> ".tmp"
 			and
 				([Attributes][Kind] = "CSV File"
 				or [Attributes][Kind] = "Text File"
