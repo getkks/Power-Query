@@ -58,6 +58,7 @@ let
 			Record.FieldOrDefault(Options, "Filter")(#"Sort by Import Date")
 		else
 			Table.FirstN(#"Sort by Import Date",1),
+
 	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
 
 	#"Choose and Rename Columns In2" = F[RenameColumnsByMapping](
@@ -68,25 +69,25 @@ let
 			F[tblColumnMapping]),
 		"In2"),
 
-	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each 
+	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each
 		Text.StartsWith([File Type], "Excel"),
 		type logical),
 
-	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each 
+	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each
 			Text.StartsWith([File Type], "CSV")
 		or
 			Text.StartsWith([File Type], "Text"),
 		type logical),
 
 	#"Load WorkBook" = Table.AddColumn(#"Added is CSV", "WorkBook", each
-			if [Excel] then 
+			if [Excel] then
 				Excel.Workbook([Content])
 			else if [CSV] then
 				try
 					#table(
 						type table
 						[
-							Name = text, 
+							Name = text,
 							Data = table,
 							Item = text,
 							Kind = text,

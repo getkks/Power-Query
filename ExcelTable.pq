@@ -1,3 +1,4 @@
 (
 	TableName as text) as table =>
-	Excel.CurrentWorkbook(){[Name=TableName]}[Content]
+	Excel.CurrentWorkbook(){
+		[Name = TableName]}[Content]

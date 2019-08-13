@@ -15,7 +15,7 @@
 		{ null , null , "Name" , "Sheet Name" , "Text"},
 		{ null , null , "Kind" , "Kind" , "Text"},
 		{ "Extension" , "Extension" , null , "Extension" , "Text"},
-		{ "Content" , "Content" , null , "Content" , null},
+		{ "Content" , "Content" , null , "Content" , "Binary"},
 		{ "Date accessed" , "Date accessed" , null , "Date accessed" , "DateTime"},
 		{ "Date modified" , "Date modified" , null , "Date modified" , "DateTime"},
 		{ null , "Content Type" , null , "Content Type" , "Text"},
@@ -35,4 +35,4 @@
 		{ null , "Offline" , null , "Offline" , "Boolean"},
 		{ null , "NotContentIndexed" , null , "NotContentIndexed" , "Boolean"},
 		{ null , "Encrypted" , null , "Encrypted" , "Boolean"},
-		{ null , null , "Data" , "WorkSheet" , "Table"}})
+		{ null , null , "Data" , "WorkSheet" , null}})

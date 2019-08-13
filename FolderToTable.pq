@@ -1,5 +1,5 @@
 (
-	FolderName as text, 
+	FolderName as text,
 	optional FileName as text,
 	optional SheetorTableName as any,
 	optional PreFilter as function,
@@ -19,7 +19,7 @@ let
 
 	FilterOpenFiles = Table.SelectRows(#"Rename File Name", each
 		(if FileName <> null then 
-			Text.Contains([File Name], FileName, Comparer.OrdinalIgnoreCase) 
+			Text.Contains([File Name], FileName, Comparer.OrdinalIgnoreCase)
 		else
 			true)
 		and
@@ -40,13 +40,13 @@ let
 			Table.FirstN(Sort,1)),
 
 	OpenWorkBooks = Table.AddColumn(PreFiltered, "WorkBook", each
-		if [Attributes][Kind] = "Excel File" then 
+		if [Attributes][Kind] = "Excel File" then
 			Excel.Workbook([Content])
 		else
 			null
 	, type table),
 
-	OpenCSV = Table.AddColumn(OpenWorkBooks, "CSV", each 
+	OpenCSV = Table.AddColumn(OpenWorkBooks, "CSV", each
 		if [Attributes][Kind] = "CSV File" or [Attributes][Kind] = "Text File" then
 			try
 				Csv.Document([Content])
@@ -59,11 +59,11 @@ let
 	#"Expanded WorkBook" = Table.ExpandTableColumn(OpenCSV, "WorkBook",
 		{"Name", "Data", "Item", "Kind", "Hidden"},
 		{"Sheet Name", "Data", "Item", "Kind", "Hidden"}),
-	
+
 	#"Kept Range of Rows" =
 		try
 			if Value.Is(SheetorTableName, type number) then
-				Table.Range(#"Expanded WorkBook",SheetorTableName,1) 
+				Table.Range(#"Expanded WorkBook",SheetorTableName,1)
 			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) = 2 then
 				Table.Range(#"Expanded WorkBook",SheetorTableName{0},SheetorTableName{1})
 			else if Value.Is(SheetorTableName, type list) and List.Count(SheetorTableName) > 2 then
@@ -73,7 +73,7 @@ let
 			else #"Expanded WorkBook"
 		otherwise
 			#"Expanded WorkBook",
-	
+
 	#"Filtered Sheet or Table" =
 		try
 			if Value.Is(SheetorTableName, type text) then 
@@ -95,10 +95,11 @@ let
 		if [Data]=null then
 			[CSV]
 		else
-			[Data]
-	, type table),
+			[Data],
+		type table),
 
 	#"Removed Other Columns" = Table.SelectColumns(#"Added WorkSheet",{"Import Date", "File Name", "Attributes", "Sheet Name", "Kind", "WorkSheet"}),
+
 	PostFiltered =
 		if PostFilter <> null then
 			PostFilter(#"Removed Other Columns")
@@ -106,6 +107,7 @@ let
 			#"Removed Other Columns",
 
 	#"Expanded Attributes" = Table.ExpandRecordColumn(PostFiltered, "Attributes", {"Kind", "Size"}, {"File Type", "Size"}),
+
 	#"Changed Type" = Table.TransformColumnTypes(#"Expanded Attributes",{
 		{"Sheet Name", type text},
 		{"Kind", type text},
