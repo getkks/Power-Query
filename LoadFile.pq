@@ -10,7 +10,7 @@ Data Path -> Default folder path for traversing
 File Name -> Full or Partial Name of the file to locate.
 Recursive -> Default value is false. True will force the folder to be traversed recursively (all sub directories).
 tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
-lstExtension -> List to filter into required file extensions.
+Extension -> List to filter into required file extensions.
 Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting. By default, recent file will be selected
 Buffer -> Enables buffer before opening the file contents. By default, the file contents will not be buffered
 */
