@@ -6,19 +6,6 @@
 let
 	KeepOtherColumns = if KeepOtherColumns = null then true else KeepOtherColumns,
 	Column = if Column = null then "WorkSheet" else Column,
-	ColumnNames = Table.ColumnNames(
-		List.First(
-			Table.Column(
-				tblData,
-				Column))),
-	Working =
-		if KeepOtherColumns then
-			tblData
-		else
-			Table.SelectColumns(
-				tblData,
-				{Column}),
-
-	Expanded = Table.ExpandTableColumn(Working, Column, ColumnNames)
+	Expanded = if KeepOtherColumns then Table.ExpandTableColumn(tblData, Column, Table.ColumnNames(Table.Column(tblData,Column){0})) else Table.ExpandTableColumn(Table.SelectColumns(tblData,{Column}), Column, Table.ColumnNames(Table.Column(tblData,Column){0}))
 in
 	Expanded

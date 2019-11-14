@@ -12,12 +12,12 @@ let
 		Name,
 		null),
 	#"Cache or Query" =
-		if #"Retrieve Cache" = null then
+		if #"Retrieve Cache" <> null and Table.RowCount(#"Retrieve Cache") > 1  then
+			#"Retrieve Cache"
+		else
 			Record.FieldOrDefault(
 				if Source = null then Q else Source,
 				Name,
 				null)
-		else
-			#"Retrieve Cache"
 in
 	#"Cache or Query"

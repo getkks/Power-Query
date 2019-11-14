@@ -13,13 +13,9 @@ tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
 Extension -> List to filter into required file extensions.
 Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting. By default, recent file will be selected
 Buffer -> Enables buffer before opening the file contents. By default, the file contents will not be buffered
-Encoding -> Csv File Enconding to use. UTF8 is the default encoding
-QuoteStyle -> QuoteStyle for CSV File
-Delimiter -> Delimiter for CSV File
-Columns -> Number of Columns to process in CSV file.
 */
 let
-	Source = Record.FieldOrDefault(Options, "Data Path", FolderName),
+	Source = if FolderName = null then Record.FieldOrDefault(Options, "Data Path", false) else FolderName,
 
 	OpenFolder =
 		if Record.FieldOrDefault(Options, "Recursive", false) then
@@ -35,31 +31,43 @@ let
 			F[tblColumnMapping]),
 		"In"),
 
-	FilterOpenFiles = Table.SelectRows(#"Choose and Rename Columns In", each
-			(Text.Contains(
-				[File Name],
-				Record.FieldOrDefault(Options, "File Name"),
-				Comparer.OrdinalIgnoreCase))
-		and
-			(not Text.StartsWith([File Name], "~$"))),
+	tblExtension = Table.FromColumns({
+		Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
+		type table[Extension = text]),
 
+	#"Filtered Known Extensions" = F[RemoveMatchingRows](
+		#"Choose and Rename Columns In",
+		tblExtension,
+		{"Extension"}),
+/*
 	#"Filtered Known Extensions" = Table.FuzzyJoin(
-		FilterOpenFiles, {"Extension"},
-		Table.FromColumns({
-			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
-			type table[Extension = text]), {"Extension"},
+		#"Choose and Rename Columns In", {"Extension"},
+		tblExtension, {"Extension"},
 		JoinKind.Inner, [
 			NumberOfMatches = 1,
 			Threshold = 1,
 			ConcurrentRequests = 4]),
+*/
+	FileName = Record.FieldOrDefault(Options, "File Name"),
 
-	#"Sort by Import Date" = Table.Sort(#"Filtered Known Extensions",{{"Import Date", Order.Descending}}),
+	FilterOpenFiles = Table.SelectRows(#"Filtered Known Extensions", each
+			(if FileName <> null then
+				Text.Contains([File Name], FileName, Comparer.OrdinalIgnoreCase)
+			else
+				true)
+		and
+			(not Text.StartsWith([File Name], "~$"))),
+
+	#"Sort by Import Date" = Table.Sort(FilterOpenFiles,{{"Import Date", Order.Descending}}),
 
 	#"Apply PreFilter" = if Record.FieldOrDefault(Options, "Filter") <> null then
 			Record.FieldOrDefault(Options, "Filter")(#"Sort by Import Date")
 		else
 			Table.FirstN(#"Sort by Import Date",1),
-	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
+
+	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter",
+		"Attributes",
+		{"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
 
 	#"Choose and Rename Columns In2" = F[RenameColumnsByMapping](
 		#"Expanded Attributes",
@@ -86,7 +94,7 @@ let
 				BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
 				LoadedFile = 
 					if rec[Excel] then 
-						Excel.Workbook(BufferedFile, false, false)
+						Excel.Workbook(BufferedFile)
 					else if rec[CSV] then
 						try
 							#table(
@@ -99,11 +107,7 @@ let
 									Hidden = logical
 								],
 								{
-									{null, Csv.Document(BufferedFile, [
-										Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
-										QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
-										Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-										Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false}
+									{null, Csv.Document(BufferedFile), null, "Text Document", false}
 								})
 						otherwise
 							null
@@ -113,7 +117,10 @@ let
 				LoadedFile,
 		type table),
 
-	#"Expanded WorkBook" = Table.ExpandTableColumn(#"Load WorkBook", "WorkBook", {"Name", "Data", "Item", "Kind", "Hidden"}, {"Name", "Data", "Item", "Kind", "Hidden Sheet"}),
+	#"Expanded WorkBook" = Table.ExpandTableColumn(#"Load WorkBook",
+		"WorkBook",
+		{"Name", "Data", "Item", "Kind", "Hidden"},
+		{"Name", "Data", "Item", "Kind", "Hidden Sheet"}),
 
 	#"Choose and Rename Columns Out" = F[RenameColumnsByMapping](
 		#"Expanded WorkBook",

@@ -13,10 +13,6 @@ tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
 Extension -> List to filter into required file extensions.
 Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting. By default, recent file will be selected
 Buffer -> Enables buffer before opening the file contents. By default, the file contents will not be buffered
-Encoding -> Csv File Enconding to use. UTF8 is the default encoding
-QuoteStyle -> QuoteStyle for CSV File
-Delimiter -> Delimiter for CSV File
-Columns -> Number of Columns to process in CSV file.
 */
 let
 	Source = Record.FieldOrDefault(Options, "Data Path", FolderName),
@@ -67,62 +63,6 @@ let
 			Options,
 			"Column Mapping",
 			F[tblColumnMapping]),
-		"In2"),
-
-	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each 
-		Text.StartsWith([File Type], "Excel"),
-		type logical),
-
-	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each 
-			Text.StartsWith([File Type], "CSV")
-		or
-			Text.StartsWith([File Type], "Text"),
-		type logical),
-
-	ToBuffer = Record.FieldOrDefault(Options, "Buffer", false),
-
-	#"Load WorkBook" = Table.AddColumn(#"Added is CSV", "WorkBook", (rec) =>
-			let
-				BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
-				LoadedFile = 
-					if rec[Excel] then 
-						Excel.Workbook(BufferedFile, false, false)
-					else if rec[CSV] then
-						try
-							#table(
-								type table
-								[
-									Name = text, 
-									Data = table,
-									Item = text,
-									Kind = text,
-									Hidden = logical
-								],
-								{
-									{null, Csv.Document(BufferedFile, [
-										Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
-										QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
-										Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-										Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false}
-								})
-						otherwise
-							null
-					else
-						null
-			in
-				LoadedFile,
-		type table),
-
-	#"Expanded WorkBook" = Table.ExpandTableColumn(#"Load WorkBook", "WorkBook", {"Name", "Data", "Item", "Kind", "Hidden"}, {"Name", "Data", "Item", "Kind", "Hidden Sheet"}),
-
-	#"Choose and Rename Columns Out" = F[RenameColumnsByMapping](
-		#"Expanded WorkBook",
-		Record.FieldOrDefault(
-			Options,
-			"Column Mapping",
-			F[tblColumnMapping]),
-		"Out"),
-
-	Result = if ToBuffer then Table.Buffer(#"Choose and Rename Columns Out") else #"Choose and Rename Columns Out"
+		"In2")
 in
-	Result
+    #"Choose and Rename Columns In2"

@@ -5,7 +5,7 @@
 	List.Accumulate(
 		List.Zip({From, To}),
 		Source,
-		(state, current) =>
+		(state, current) => 
 			Table.DuplicateColumn(
 				state,
 				current{0},

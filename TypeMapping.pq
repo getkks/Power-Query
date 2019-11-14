@@ -33,6 +33,5 @@
 		{ "UInt8", Byte.Type},
 		{ "Int16", Int16.Type},
 		{ "Int32", Int32.Type},
-		{ "Int64", Int64.Type},
 		{ "Single", Single.Type},
 		{ "Double", Double.Type}})
