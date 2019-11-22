@@ -52,13 +52,21 @@ let
 			NumberOfMatches = 1,
 			Threshold = 1,
 			ConcurrentRequests = 4]),
-
+/*
+	#"Filtered Known Extensions" = Table.Join(
+		FilterOpenFiles, {"Extension"},
+		Table.FromColumns({
+			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
+			type table[Extension = text]), {"Extension"},
+		JoinKind.Inner),
+*/
 	#"Sort by Import Date" = Table.Sort(#"Filtered Known Extensions",{{"Import Date", Order.Descending}}),
 
 	#"Apply PreFilter" = if Record.FieldOrDefault(Options, "Filter") <> null then
 			Record.FieldOrDefault(Options, "Filter")(#"Sort by Import Date")
 		else
 			Table.FirstN(#"Sort by Import Date",1),
+
 	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
 
 	#"Choose and Rename Columns In2" = F[RenameColumnsByMapping](
@@ -69,37 +77,38 @@ let
 			F[tblColumnMapping]),
 		"In2"),
 
-	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each 
-		Text.StartsWith([File Type], "Excel"),
+	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each
+		Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase),
 		type logical),
 
-	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each 
-			Text.StartsWith([File Type], "CSV")
-		or
-			Text.StartsWith([File Type], "Text"),
+	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each
+			Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase),
+		type logical),
+    #"Added Zip" = Table.AddColumn(#"Added is CSV", "Zip", each
+			Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase),
 		type logical),
 
 	ToBuffer = Record.FieldOrDefault(Options, "Buffer", false),
 
-	#"Load WorkBook" = Table.AddColumn(#"Added is CSV", "WorkBook", (rec) =>
+	#"Load WorkBook" = Table.AddColumn(#"Added Zip", "WorkBook", (rec) =>
 			let
 				BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
-				LoadedFile = 
-					if rec[Excel] then 
+				LoadedFile =
+					if rec[Excel] then
 						Excel.Workbook(BufferedFile, false, false)
-					else if rec[CSV] then
+					else if rec[CSV] or rec[Zip] then
 						try
 							#table(
 								type table
 								[
-									Name = text, 
+									Name = text,
 									Data = table,
 									Item = text,
 									Kind = text,
 									Hidden = logical
 								],
 								{
-									{null, Csv.Document(BufferedFile, [
+									{null, Csv.Document(if rec[Zip] then List.First(F[LoadZip](BufferedFile)[Content]) else BufferedFile, [
 										Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
 										QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
 										Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
