@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: GH Release
     - uses: softprops/action-gh-release@v0.1.0
+    - name: GH Release
       with:
         # Note-worthy description of changes in release
         #body: # optional, default is empty
