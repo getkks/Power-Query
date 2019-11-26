@@ -28,7 +28,7 @@ let
 
 	Type = List.Contains(Table.ColumnNames(#"Filtered Rows"),TypeColumn),
 
-	Merged = 
+	Merged =
 		if Type then
 			Table.ExpandTableColumn(
 				Table.NestedJoin(

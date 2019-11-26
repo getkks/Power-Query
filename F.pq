@@ -30,6 +30,5 @@
 	CustomLoaded = Record.FromList(List.Transform(CustomBoth, Load), CustomBoth),
 
 	SharedAndLoaded = Record.Combine({CustomLoaded, SharedMerged})
-	
 in
 	SharedAndLoaded

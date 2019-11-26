@@ -1,7 +1,7 @@
 (start as date,
 	end as date,
 	optional HolidaysList as list) as number =>
-   
+
 let
 	LstOfHolidays = if HolidaysList = null then {} else HolidaysList,
 	NumLstOfHolidays = List.Transform(LstOfHolidays ,each Number.From(_)),

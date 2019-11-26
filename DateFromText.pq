@@ -11,11 +11,11 @@ let
 			{0,2,4}
 		else
 			Positions),
-	
+
 	Splited = Splitter(Source),
-	
+
 	Split = List.Transform(Splited, Int16.From),
-	
+
 	Date =
 		if Combiner is null then
 			#date(Split{2},Split{0},Split{1})

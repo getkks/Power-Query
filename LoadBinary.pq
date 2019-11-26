@@ -65,4 +65,4 @@ let
 			F[tblColumnMapping]),
 		"In2")
 in
-    #"Choose and Rename Columns In2"
+	#"Choose and Rename Columns In2"
