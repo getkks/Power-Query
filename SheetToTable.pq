@@ -4,7 +4,7 @@
 	optional SkipRows) =>
 
 let
-	BlankandNull = (Value, 
+	BlankandNull = (Value,
 		optional NullandBlank) =>
 
 		let
@@ -22,7 +22,7 @@ let
 		in
 			Result,
 
-	Selected = if SkipRows = null then 
+	Selected = if SkipRows = null then
 			Table.SelectRows(Source, each
 				BlankandNull(Record.Field(_, "Column" & (
 					if ColumnNumber = null then

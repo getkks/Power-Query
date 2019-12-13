@@ -77,11 +77,11 @@ let
 			F[tblColumnMapping]),
 		"In2"),
 
-	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each 
+	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each
 		Text.StartsWith([File Type], "Excel"),
 		type logical),
 
-	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each 
+	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each
 			Text.StartsWith([File Type], "CSV")
 		or
 			Text.StartsWith([File Type], "Text"),
@@ -92,15 +92,15 @@ let
 	#"Load WorkBook" = Table.AddColumn(#"Added is CSV", "WorkBook", (rec) =>
 			let
 				BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
-				LoadedFile = 
-					if rec[Excel] then 
+				LoadedFile =
+					if rec[Excel] then
 						Excel.Workbook(BufferedFile)
 					else if rec[CSV] then
 						try
 							#table(
 								type table
 								[
-									Name = text, 
+									Name = text,
 									Data = table,
 									Item = text,
 									Kind = text,

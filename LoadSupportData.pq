@@ -10,8 +10,8 @@ let
 
 	#"Filtered Table" = Table.SelectRows(Source, each ([Kind] = "Table" and [Name] <> "tblSupportData")),
 
-	Selector = 
-		(TableName as text) => 
+	Selector =
+		(TableName as text) =>
 			try Table.SelectRows(
 				Source{[Name="tblSupportData"]}[Data], each [Name] = TableName)
 			otherwise
@@ -25,7 +25,7 @@ let
 			each F[RenameColumnsByMapping](
 				[Data], Selector([Name]), "Column Name"))),
 
-	#"To Record" = 
+	#"To Record" =
 		Record.FromTable(#"Choose and Rename")
 in
 	#"To Record"

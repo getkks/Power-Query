@@ -5,7 +5,7 @@
 		Documentation.FieldDescription = "List of positions for date splitter.",
 		Documentation.SampleValues =  {"{0,2,4}"}]*/,
 	optional Combiner as function) as date=>
-let 
+let
 	Splitter = Splitter.SplitTextByPositions(
 		if Positions is null then
 			{0,2,4}
