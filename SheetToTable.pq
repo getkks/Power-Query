@@ -4,7 +4,7 @@
 	optional SkipRows) =>
 
 let
-	BlankandNull = (Value,
+	BlankandNull = (Value, 
 		optional NullandBlank) =>
 
 		let
@@ -31,7 +31,13 @@ let
 						Number.ToText(ColumnNumber)))
 					,NoNullandBlank))
 		else
-			Table.Skip(Source, SkipRows),
+			if SkipRows = 0 then
+				if Comparer.Equals(Comparer.OrdinalIgnoreCase, Table.FirstValue(Source), "UTF8") then
+					Table.Skip(Source, 1)
+				else
+					Source
+			else
+				Table.Skip(Source, SkipRows),
 
 	Promoted = Table.PromoteHeaders(Selected, [PromoteAllScalars=true])
 in

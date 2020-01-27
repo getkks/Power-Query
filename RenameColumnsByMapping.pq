@@ -2,20 +2,24 @@
 	MappingTable as table,
 	FromColumn as text,
 	optional ToColumn as text,
-	optional TypeColumn as text) =>
+	optional TypeColumn as text,
+	optional Culture as text) =>
 
 let
 	Source = F[CleanColumnNames](Source),
+
 	ToColumn =
 		if ToColumn = null then
 			"Output Column Name"
 		else
 			ToColumn,// otherwise "Output Column Name",
+
 	TypeColumn	=
 		if TypeColumn = null then
 			"Type Name"
 		else
 			TypeColumn,
+
 	#"Filtered Rows" = Table.SelectRows(MappingTable, each (
 			Record.Field(_, FromColumn) <> null
 		and
@@ -45,7 +49,8 @@ let
 			Table.TransformColumnTypes(#"Choose and Rename Columns",
 				List.Zip({
 					Table.Column(Merged, ToColumn),
-					Table.Column(Merged, "Type")}))
+					Table.Column(Merged, "Type")}),
+				if Culture is null then Culture.Current else Culture)
 		else
 			#"Choose and Rename Columns"
 in

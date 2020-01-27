@@ -24,6 +24,7 @@ let
 				UncompressedData = BinaryFormat.Transform(BinaryFormat.Binary(_[CompressedSize]),(x) => try Binary.Decompress(x, Compression.Deflate) otherwise null)
 				]),
 		type binary),
+
 	ZipFormat = BinaryFormat.List(FileEntry, each _<> null),
 
 	Entries = List.Transform(
