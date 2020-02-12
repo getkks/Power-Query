@@ -58,7 +58,7 @@
 	 * :: [a] [b] -> [[a, b]]
 	 */
 	CartProd = (xs as list, ys as list) =>
-		M[ConcatMap]((x) => M[ConcatMap]((y) => {
+		ConcatMap((x) => ConcatMap((y) => {
 			{x, y}
 		})(ys))(xs),
 
