@@ -1,3 +1,17 @@
+/*
+
+Copyright 2019 - 2020
+
+Project			: Power-Query		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query
+
+File			: Search&Replace.pq		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query\Search&Replace.pq
+Created			: Tuesday, 30th April 2019 5:32:41 pm
+
+Author			: KarthikK Selvan
+
+Change History:
+
+*/
 (
 	Source as table,
 	KeyValue as table,

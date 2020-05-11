@@ -1,10 +1,24 @@
+/*
+
+Copyright 2019 - 2020
+
+Project			: Power-Query		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query
+
+File			: SheetToTable.pq		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query\SheetToTable.pq
+Created			: Tuesday, 30th April 2019 5:32:41 pm
+
+Author			: KarthikK Selvan
+
+Change History:
+
+*/
 (Source as table,
 	optional ColumnNumber as number,
 	optional NoNullandBlank,
 	optional SkipRows) =>
 
 let
-	BlankandNull = (Value, 
+	BlankandNull = (Value,
 		optional NullandBlank) =>
 
 		let

@@ -26,6 +26,6 @@ let
 				[Data], Selector([Name]), "Column Name")),//),
 
 	#"To Record" =
-		Record.FromTable(#"Choose and Rename")
+		Record.FromTable(Table.Buffer(#"Choose and Rename"))
 in
 	#"To Record"

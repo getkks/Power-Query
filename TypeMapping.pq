@@ -1,3 +1,17 @@
+/*
+
+Copyright 2019 - 2020
+
+Project			: Power-Query		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query
+
+File			: TypeMapping.pq		@ => d:\Karthik K Selvan\Power Query\Library Functions\Power-Query\TypeMapping.pq
+Created			: Thursday, 2nd May 2019 3:35:53 pm
+
+Author			: KarthikK Selvan
+
+Change History:
+
+*/
 #table(
 	type table
 	[
