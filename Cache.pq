@@ -38,24 +38,21 @@ Author			: getkks (getkks@live.in)
 
 Change History:
 
+2020-05-12		KarthikK Selvan		Refactored the code to Functional Style
 */
 (
 	Name as text,
 	optional Source as record,
 	optional KeyColumn as text) =>
 let
-	Book = Excel.CurrentWorkbook(),
-
-	#"Transposed Table" = Table.Transpose(Book),
-
-	#"Reversed Rows" = Table.ReverseRows(#"Transposed Table"),
-
-	#"Promoted Headers" = Table.PromoteHeaders(#"Reversed Rows", [PromoteAllScalars=true]),
-
-	#"To Record" = List.First(Table.ToRecords(#"Promoted Headers")),
-
-	#"Retrieve Cache" = Record.FieldOrDefault(
-		#"To Record",
+	#"Retrieve Cache" =
+		Record.FieldOrDefault(
+			List.First(
+				Table.ToRecords(
+					Table.PromoteHeaders(
+						Table.ReverseRows(
+							Table.Transpose(Excel.CurrentWorkbook())),
+						[PromoteAllScalars=true]))),
 		Name,
 		null),
 

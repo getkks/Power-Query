@@ -38,6 +38,7 @@ Author			: getkks (getkks@live.in)
 
 Change History:
 
+2020-05-29		getkks		Expanded support for Zip files with more than one file. Each File name will be listed in Sheet Name column without extension
 */
 (
 	optional FolderName as text,
@@ -54,7 +55,7 @@ tblColumnMapping -> Mapping for Rename operations. Consists of three stages.
 Extension -> List to filter into required file extensions.
 Filter -> Filters the Folder Contents using a function which operates on table. This is post stage 1 rename and sorting. By default, recent file will be selected
 Buffer -> Enables buffer before opening the file contents. By default, the file contents will not be buffered
-Encoding -> Csv File Enconding to use. UTF8 is the default encoding
+Encoding -> Csv File Encoding to use. UTF8 is the default encoding
 QuoteStyle -> QuoteStyle for CSV File
 Delimiter -> Delimiter for CSV File
 Columns -> Number of Columns to process in CSV file.
@@ -127,14 +128,26 @@ let
 										Kind = text,
 										Hidden = logical
 									],
-									{
-										//{null, Csv.Document(if rec[Zip] then List.First(F[LoadZip](BufferedFile)[Content]) else BufferedFile, [
-										{null, Csv.Document(if rec[Zip] then List.First(F[LoadZip](rec[Content])[Content]) else rec[Content], [
-											Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
-											QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
-											Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-											Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false}
-									})
+									List.Transform(
+										if rec[Zip] then
+											Table.ToRows(
+												Table.SplitColumn(
+													F[LoadZip](rec[Content]),
+													"File Name",
+													Splitter.SplitTextByEachDelimiter(
+														{"."},
+														QuoteStyle.Csv,
+														true),
+													{"Name"}))
+										else
+											{{null, rec[Content]}},
+										each {
+												List.First(_), Csv.Document(List.Last(_), [
+													Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
+													QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
+													Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
+													Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false})
+									)
 							otherwise
 								null
 						else
