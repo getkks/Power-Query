@@ -69,7 +69,7 @@ let
 	ZipFormat = BinaryFormat.List(FileEntry, each _<> null),
 
 	Entries = List.Transform(
-			List.RemoveLastN( ZipFormat(ZIPFileContent), 1),
+			List.RemoveLastN(ZipFormat(Binary.Buffer(ZIPFileContent)), 1),
 		(e) => [File Name = e[FileName], Content = e[UncompressedData] ]
 	)
 in

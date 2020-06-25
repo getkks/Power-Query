@@ -58,239 +58,101 @@ Buffer -> Enables buffer before opening the file contents. By default, the file 
 Encoding -> Csv File Encoding to use. UTF8 is the default encoding
 QuoteStyle -> QuoteStyle for CSV File
 Delimiter -> Delimiter for CSV File
-Columns -> Number of Columns to process in CSV file.
+Columns -> Number of Columns to process in CSV file. Do not specify column number when handling zip file with varying column sized csv files.
 */
-let
-	ToBuffer = Record.FieldOrDefault(Options, "Buffer", false),
+F[FP][ChainOperations]({
 
-	Source = F[FP][ChainOperations]({
-
+	{each
 		if Record.FieldOrDefault(Options, "Recursive", false) then
-			{Folder.Files}
+			Folder.Files(_)
 		else
-			{Folder.Contents},
+			Folder.Contents(_)},
 
-		{Table.SelectRows, each
-			(Text.Contains(
-				[Name],
-				Record.FieldOrDefault(Options, "File Name"),
-				Comparer.OrdinalIgnoreCase))
-		and
-			(not Text.StartsWith([Name], "~$"))},
+	{Table.SelectRows, each
+		(Text.Contains(
+			[Name],
+			Record.FieldOrDefault(Options, "File Name"),
+			Comparer.OrdinalIgnoreCase))
+	and
+		(not Text.StartsWith([Name], "~$"))},
 
-		{Table.Join, {"Extension"},
-			Table.FromColumns({
-				Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
-				type table[Extension = text]), {"Extension"},
-			JoinKind.Inner,JoinAlgorithm.Dynamic},
+	{Table.Join, {"Extension"},
+		Table.FromColumns({
+			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
+			type table[Extension = text]), {"Extension"},
+		JoinKind.Inner, JoinAlgorithm.RightIndex},
 
-		//{Table.ExpandRecordColumn, "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}},
+	{Table.ExpandRecordColumn, "Attributes", {"Content Type", "Kind", "Size"}},
 
-		{Table.ExpandRecordColumn, "Attributes", {"Content Type", "Kind", "Size"}},
-
-		{F[RenameColumnsByMapping],
-			Record.FieldOrDefault(
-				Options,
-				"Column Mapping",
-				F[tblColumnMapping]),
-			"In2"},
-
-		{Table.Sort, {{"Import Date", Order.Descending}}},
-
-		{(_) => if Record.FieldOrDefault(Options, "Filter") <> null then
-			Record.FieldOrDefault(Options, "Filter")(_)
-		else
-			Table.FirstN(_, 1)},
-
-		{F[FP][AddColumns]({
-
-			{"Excel", each Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase), type logical},
-
-			{"CSV", each Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase), type logical},
-
-			{"Zip", each Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase), type logical},
-
-			{"WorkBook", (rec) =>
-				let
-					//BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
-					LoadedFile =
-						if rec[Excel] then
-							//Excel.Workbook(BufferedFile, false, false)
-							Excel.Workbook(rec[Content], false, false)
-						else if rec[CSV] or rec[Zip] then
-							try
-								#table(
-									type table
-									[
-										Name = text,
-										Data = table,
-										Item = text,
-										Kind = text,
-										Hidden = logical
-									],
-									List.Transform(
-										if rec[Zip] then
-											Table.ToRows(
-												Table.SplitColumn(
-													F[LoadZip](rec[Content]),
-													"File Name",
-													Splitter.SplitTextByEachDelimiter(
-														{"."},
-														QuoteStyle.Csv,
-														true),
-													{"Name"}))
-										else
-											{{null, rec[Content]}},
-										each {
-												List.First(_), Csv.Document(List.Last(_), [
-													Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
-													QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
-													Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-													Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false})
-									)
-							otherwise
-								null
-						else
-							null
-				in
-					LoadedFile,type table}
-		})},
-
-		{Table.ExpandTableColumn, "WorkBook", {"Name", "Data", "Item", "Kind"}, {"Name", "Data", "Item", "Kind"}},
-
-		{F[RenameColumnsByMapping],Record.FieldOrDefault(
-			Options,
-			"Column Mapping",
-			F[tblColumnMapping]),
-		"Out"},
-
-		{(_) => if ToBuffer then Table.Buffer(_) else _}
-
-		})(Record.FieldOrDefault(Options, "Data Path", FolderName))
-in
-	Source
-
-/*
-let
-	Source = Record.FieldOrDefault(Options, "Data Path", FolderName),
-
-	OpenFolder =
-		if Record.FieldOrDefault(Options, "Recursive", false) then
-			Folder.Files
-		else
-			Folder.Contents,
-
-	#"Choose and Rename Columns In" = F[RenameColumnsByMapping](
-		OpenFolder(Source),
+	{F[RenameColumnsByMapping],
 		Record.FieldOrDefault(
 			Options,
 			"Column Mapping",
 			F[tblColumnMapping]),
-		"In"),
+		"In2"},
 
-	FilterOpenFiles = Table.SelectRows(#"Choose and Rename Columns In", each
-			(Text.Contains(
-				[File Name],
-				Record.FieldOrDefault(Options, "File Name"),
-				Comparer.OrdinalIgnoreCase))
-		and
-			(not Text.StartsWith([File Name], "~$"))),
+	{Table.Sort, {{"Import Date", Order.Descending}}},
 
-	#"Filtered Known Extensions" = Table.FuzzyJoin(
-		FilterOpenFiles, {"Extension"},
-		Table.FromColumns({
-			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
-			type table[Extension = text]), {"Extension"},
-		JoinKind.Inner, [
-			NumberOfMatches = 1,
-			Threshold = 1,
-			ConcurrentRequests = 4]),
-/*
-	#"Filtered Known Extensions" = Table.Join(
-		FilterOpenFiles, {"Extension"},
-		Table.FromColumns({
-			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
-			type table[Extension = text]), {"Extension"},
-		JoinKind.Inner, JoinAlgorithm.Dynamic),
-*//*
-	#"Sort by Import Date" = Table.Sort(#"Filtered Known Extensions",{{"Import Date", Order.Descending}}),
+	{(x) => Record.FieldOrDefault(Options, "Filter", each Table.FirstN(_,1))(x)},
 
-	#"Apply PreFilter" = if Record.FieldOrDefault(Options, "Filter") <> null then
-			Record.FieldOrDefault(Options, "Filter")(#"Sort by Import Date")
-		else
-			Table.FirstN(#"Sort by Import Date",1),
+	{F[FP][AddColumns]({
 
-	//#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size", "ReadOnly", "Hidden", "System", "Directory", "Archive", "Device", "Normal", "Temporary", "SparseFile", "ReparsePoint", "Compressed", "Offline", "NotContentIndexed", "Encrypted"}),
-	#"Expanded Attributes" = Table.ExpandRecordColumn(#"Apply PreFilter", "Attributes", {"Content Type", "Kind", "Size"}),
+		{"Excel", each Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase), type logical},
 
-	#"Choose and Rename Columns In2" = F[RenameColumnsByMapping](
-		#"Expanded Attributes",
-		Record.FieldOrDefault(
-			Options,
-			"Column Mapping",
-			F[tblColumnMapping]),
-		"In2"),
+		{"CSV", each Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase), type logical},
 
-	#"Added is Excel" = Table.AddColumn(#"Choose and Rename Columns In2", "Excel", each
-		Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase),
-		type logical),
+		{"Zip", each Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase), type logical},
 
-	#"Added is CSV" = Table.AddColumn(#"Added is Excel", "CSV", each
-			Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase),
-		type logical),
-
-	#"Added Zip" = Table.AddColumn(#"Added is CSV", "Zip", each
-			Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase),
-		type logical),
-
-	ToBuffer = Record.FieldOrDefault(Options, "Buffer", false),
-
-	#"Load WorkBook" = Table.AddColumn(#"Added Zip", "WorkBook", (rec) =>
-			let
-				//BufferedFile = if ToBuffer then Binary.Buffer(rec[Content]) else rec[Content],
-				LoadedFile =
-					if rec[Excel] then
-						//Excel.Workbook(BufferedFile, false, false)
-						Excel.Workbook(rec[Content], false, false)
-					else if rec[CSV] or rec[Zip] then
-						try
-							#table(
-								type table
-								[
-									Name = text,
-									Data = table,
-									Item = text,
-									Kind = text,
-									Hidden = logical
-								],
-								{
-									//{null, Csv.Document(if rec[Zip] then List.First(F[LoadZip](BufferedFile)[Content]) else BufferedFile, [
-									{null, Csv.Document(if rec[Zip] then List.First(F[LoadZip](rec[Content])[Content]) else rec[Content], [
+		{"WorkBook", (rec) =>
+			if rec[Excel] then
+				//Excel.Workbook(BufferedFile, false, false)
+				Excel.Workbook(rec[Content], false, false)
+			else if rec[CSV] or rec[Zip] then
+				try
+					#table(
+						type table
+						[
+							Name = text,
+							Data = table,
+							Item = text,
+							Kind = text,
+							Hidden = logical
+						],
+						List.Transform(
+							if rec[Zip] then
+								Table.ToRows(
+									Table.SplitColumn(
+										F[LoadZip](
+											rec[Content]),
+										"File Name",
+										Splitter.SplitTextByEachDelimiter(
+											{"."},
+											QuoteStyle.Csv,
+											true),
+										{"Name"}))
+							else
+								{{null, rec[Content]}},
+							each {
+									List.First(_), Csv.Document(List.Last(_), [
 										Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
 										QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
 										Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-										Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false}
-								})
-						otherwise
-							null
-					else
-						null
-			in
-				LoadedFile,
-		type table),
+										Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false})
+						)
+				otherwise
+					null
+			else
+				null, type table}
+	})},
 
-	#"Expanded WorkBook" = Table.ExpandTableColumn(#"Load WorkBook", "WorkBook", {"Name", "Data", "Item", "Kind", "Hidden"}, {"Name", "Data", "Item", "Kind", "Hidden Sheet"}),
+	{Table.ExpandTableColumn, "WorkBook", {"Name", "Data", "Item", "Kind"}, {"Name", "Data", "Item", "Kind"}},
 
-	#"Choose and Rename Columns Out" = F[RenameColumnsByMapping](
-		#"Expanded WorkBook",
-		Record.FieldOrDefault(
-			Options,
-			"Column Mapping",
-			F[tblColumnMapping]),
-		"Out")
-in
-	if ToBuffer then Table.Buffer(#"Choose and Rename Columns Out") else #"Choose and Rename Columns Out"
-*/
-	/*,Result = if ToBuffer then Table.Buffer(#"Choose and Rename Columns Out") else #"Choose and Rename Columns Out"
-in
-	Result*/
+	{F[RenameColumnsByMapping],Record.FieldOrDefault(
+		Options,
+		"Column Mapping",
+		F[tblColumnMapping]),
+	"Out"},
+
+	{(_) => if Record.FieldOrDefault(Options, "Buffer", false) then Table.Buffer(_) else _}
+
+})(Record.FieldOrDefault(Options, "Data Path", FolderName))

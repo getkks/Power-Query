@@ -31,43 +31,61 @@ For more information, please refer to <http: //unlicense.org>
 
 Project			: Power-Query @ d:\Development\M\Power-Query
 
-File			: LoadSupportData.pq @ d:\Development\M\Power-Query\LoadSupportData.pq
+File			: SupportData.pq @ d:\Development\M\Power-Query\SupportData.pq
 File Created	: Saturday, 9th May 2020 3:20:38 pm
 
 Author			: getkks (getkks@live.in)
 
 Change History:
 
-2020-06-05		getkks		Legacy for supporting existing code paths
+*/
+/*
+Parameters
+----------
+
+Options
+	- Path 			→ Support Path. Defaults to P[Support Path].
+	- File Name 	→ Partial or full name of Support File. Defaults to Support.
 */
 (
-	optional FilePath as text) as record =>
+	optional Options as record) as record =>
 let
-	FilePath = if FilePath = null then P[Support File] else FilePath,
-
-	Source = Excel.Workbook(
-		Binary.Buffer(
-			File.Contents(FilePath)),
-		null, true),
-
-	#"Filtered Table" = Table.SelectRows(Source, each ([Kind] = "Table" and [Name] <> "tblSupportData")),
-
 	Selector =
-		(TableName as text) =>
-			try Table.SelectRows(
+		(Source as table,TableName as text) as table=>
+			try
+				Table.SelectRows(
 				Source{[Name="tblSupportData"]}[Data], each [Name] = TableName)
 			otherwise
 				Table.FromColumns({
 					Table.ColumnNames(Source{[Name=TableName]}[Data]),
 					Table.ColumnNames(Source{[Name=TableName]}[Data])},
-					{"Column Name", "Output Column Name"}),
-
-	#"Choose and Rename" = Table.AddColumn(//Table.Buffer(Table.AddColumn(
-		#"Filtered Table", "Value",
-			each F[RenameColumnsByMapping](
-				[Data], Selector([Name]), "Column Name")),//),
-
-	#"To Record" =
-		Record.FromTable(Table.Buffer(#"Choose and Rename"))
+					{"Column Name", "Output Column Name"})
 in
-	#"To Record"
+	F[FP][ChainOperations]({
+		{Table.SelectRows, each [Kind] = "Sheet" or [Kind] = "Text Document"},
+
+		{Table.RenameColumns, {{"Sheet Name", "Name"},{"WorkSheet", "Data"}}},
+
+		{Table.TransformColumns, {{"Data", each
+			F[FP][ChainOperations]({
+
+				{Table.PromoteHeaders},
+
+				{each Table.ReplaceValue(_, "", null, Replacer.ReplaceValue, Table.ColumnNames(_))}
+		})(_), type table}}},
+
+		{Table.SelectColumns, {"Name", "Data"}},
+
+		{(Source) => Table.AddColumn(Source, "Value", each F[RenameColumnsByMapping]([Data], Selector(Source, [Name]), "Column Name"))},
+
+		{Record.FromTable}
+
+	})(F[LoadFile](
+		Record.FieldOrDefault(Options,"Path", P[Support Path]),
+		[
+			File Name = Record.FieldOrDefault(Options,"File Name", "Support"),
+			Recursive = true,
+			Buffer = true,
+			QuoteStyle = QuoteStyle.Csv,
+			Delimiter = ","
+		]))
