@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Copyright 2020 - 2020 getkks, getkks@live.in
 
@@ -38,6 +38,7 @@ Author			: getkks (getkks@live.in)
 
 Change History:
 
+2020-07-29		IN086482		Added error message in case of no file path.
 */
 /*
 Parameters
@@ -47,45 +48,69 @@ Options
 	- Path 			→ Support Path. Defaults to P[Support Path].
 	- File Name 	→ Partial or full name of Support File. Defaults to Support.
 */
-(
-	optional Options as record) as record =>
-let
-	Selector =
-		(Source as table,TableName as text) as table=>
-			try
-				Table.SelectRows(
-				Source{[Name="tblSupportData"]}[Data], each [Name] = TableName)
-			otherwise
-				Table.FromColumns({
-					Table.ColumnNames(Source{[Name=TableName]}[Data]),
-					Table.ColumnNames(Source{[Name=TableName]}[Data])},
-					{"Column Name", "Output Column Name"})
-in
-	F[FP][ChainOperations]({
-		{Table.SelectRows, each [Kind] = "Sheet" or [Kind] = "Text Document"},
-
-		{Table.RenameColumns, {{"Sheet Name", "Name"},{"WorkSheet", "Data"}}},
-
-		{Table.TransformColumns, {{"Data", each
-			F[FP][ChainOperations]({
-
-				{Table.PromoteHeaders},
-
-				{each Table.ReplaceValue(_, "", null, Replacer.ReplaceValue, Table.ColumnNames(_))}
-		})(_), type table}}},
-
-		{Table.SelectColumns, {"Name", "Data"}},
-
-		{(Source) => Table.AddColumn(Source, "Value", each F[RenameColumnsByMapping]([Data], Selector(Source, [Name]), "Column Name"))},
-
-		{Record.FromTable}
-
-	})(F[LoadFile](
-		Record.FieldOrDefault(Options,"Path", P[Support Path]),
-		[
-			File Name = Record.FieldOrDefault(Options,"File Name", "Support"),
-			Recursive = true,
-			Buffer = true,
-			QuoteStyle = QuoteStyle.Csv,
-			Delimiter = ","
-		]))
+(optional Options as record) as record => 
+	let
+		Selector = (Source as table, TableName as text) as table => try Table.SelectRows(
+				Source{[Name = "tblSupportData"]}[Data], 
+				each [Name] = TableName
+			) otherwise Table.FromColumns(
+				{
+					Table.ColumnNames(Source{[Name = TableName]}[Data]), 
+					Table.ColumnNames(Source{[Name = TableName]}[Data])
+				}, 
+				{"Column Name", "Output Column Name"}
+			)
+	in
+		F[FP][ChainOperations](
+				{
+					{Table.SelectRows, each [Kind] = "Sheet" or [Kind] = "Text Document"}, 
+					{Table.RenameColumns, {{"Sheet Name", "Name"}, {"WorkSheet", "Data"}}}, 
+					{
+						Table.TransformColumns, 
+						{
+							{
+								"Data", 
+								each F[FP][ChainOperations](
+										{
+											{Table.PromoteHeaders}, 
+											{
+												each Table.ReplaceValue(
+														_, 
+														"", 
+														null, 
+														Replacer.ReplaceValue, 
+														Table.ColumnNames(_)
+													)
+											}
+										}
+									)(_), 
+								type table
+							}
+						}
+					}, 
+					{Table.SelectColumns, {"Name", "Data"}}, 
+					{
+						(Source) => Table.AddColumn(
+								Source, 
+								"Value", 
+								each F[RenameColumnsByMapping]([Data], Selector(Source, [Name]), "Column Name")
+							)
+					}, 
+					{Record.FromTable}
+				}
+			)(
+				F[LoadFile](
+						if Record.FieldOrDefault(Options, "Path", null) = null then 
+						try P[Support Path]
+							 otherwise error "Path field is missing in Options parameter. P[Support Path] is not defined. Unable to load Support Data as there is no valid path."
+						else 
+						Options[Path], 
+						[
+							File Name = Record.FieldOrDefault(Options, "File Name", "Support"), 
+							Recursive = true, 
+							Buffer = true, 
+							QuoteStyle = QuoteStyle.Csv, 
+							Delimiter = ","
+						]
+					)
+			)
