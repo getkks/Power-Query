@@ -60,99 +60,81 @@ QuoteStyle -> QuoteStyle for CSV File
 Delimiter -> Delimiter for CSV File
 Columns -> Number of Columns to process in CSV file. Do not specify column number when handling zip file with varying column sized csv files.
 */
-F[FP][ChainOperations]({
+F[FP][ChainOperations](
+		{
+			{each if Record.FieldOrDefault(Options, "Recursive", false) then Folder.Files(_) else Folder.Contents(_)},
+			{
+				Table.SelectRows,
+				each (Text.Contains([Name], Record.FieldOrDefault(Options, "File Name"), Comparer.OrdinalIgnoreCase))
+					and (not Text.StartsWith([Name], "~$"))
+			},
+			{
+				Table.Join,
+				{"Extension"},
+				Table.FromColumns(
+						{Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
+						type table[Extension = text]
+					),
+				{"Extension"},
+				JoinKind.Inner,
+				JoinAlgorithm.RightIndex
+			},
+			{Table.ExpandRecordColumn, "Attributes", {"Content Type", "Kind", "Size"}},
+			{F[RenameColumnsByMapping], Record.FieldOrDefault(Options, "Column Mapping", F[tblColumnMapping]), "In2"},
+			{Table.Sort, {{"Import Date", Order.Descending}}},
+			{(x) => Record.FieldOrDefault(Options, "Filter", each Table.FirstN(_, 1))(x)},
+			{
+				F[FP][AddColumns](
+						{
+							{"Excel", each Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase), type logical},
 
-	{each
-		if Record.FieldOrDefault(Options, "Recursive", false) then
-			Folder.Files(_)
-		else
-			Folder.Contents(_)},
+							{"CSV", each Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase), type logical},
 
-	{Table.SelectRows, each
-		(Text.Contains(
-			[Name],
-			Record.FieldOrDefault(Options, "File Name"),
-			Comparer.OrdinalIgnoreCase))
-	and
-		(not Text.StartsWith([Name], "~$"))},
+							{"Zip", each Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase), type logical},
 
-	{Table.Join, {"Extension"},
-		Table.FromColumns({
-			Record.FieldOrDefault(Options, "Extension", F[lstExtension])},
-			type table[Extension = text]), {"Extension"},
-		JoinKind.Inner, JoinAlgorithm.RightIndex},
-
-	{Table.ExpandRecordColumn, "Attributes", {"Content Type", "Kind", "Size"}},
-
-	{F[RenameColumnsByMapping],
-		Record.FieldOrDefault(
-			Options,
-			"Column Mapping",
-			F[tblColumnMapping]),
-		"In2"},
-
-	{Table.Sort, {{"Import Date", Order.Descending}}},
-
-	{(x) => Record.FieldOrDefault(Options, "Filter", each Table.FirstN(_,1))(x)},
-
-	{F[FP][AddColumns]({
-
-		{"Excel", each Text.Contains([File Type], "Excel", Comparer.OrdinalIgnoreCase), type logical},
-
-		{"CSV", each Text.Contains([Content Type], "text", Comparer.OrdinalIgnoreCase), type logical},
-
-		{"Zip", each Text.Contains([Content Type], "zip", Comparer.OrdinalIgnoreCase), type logical},
-
-		{"WorkBook", (rec) =>
-			if rec[Excel] then
-				//Excel.Workbook(BufferedFile, false, false)
-				Excel.Workbook(rec[Content], false, false)
-			else if rec[CSV] or rec[Zip] then
-				try
-					#table(
-						type table
-						[
-							Name = text,
-							Data = table,
-							Item = text,
-							Kind = text,
-							Hidden = logical
-						],
-						List.Transform(
-							if rec[Zip] then
-								Table.ToRows(
-									Table.SplitColumn(
-										F[LoadZip](
-											rec[Content]),
-										"File Name",
-										Splitter.SplitTextByEachDelimiter(
-											{"."},
-											QuoteStyle.Csv,
-											true),
-										{"Name"}))
-							else
-								{{null, rec[Content]}},
-							each {
-									List.First(_), Csv.Document(List.Last(_), [
-										Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
-										QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
-										Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
-										Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false})
-						)
-				otherwise
-					null
-			else
-				null, type table}
-	})},
-
-	{Table.ExpandTableColumn, "WorkBook", {"Name", "Data", "Item", "Kind"}, {"Name", "Data", "Item", "Kind"}},
-
-	{F[RenameColumnsByMapping],Record.FieldOrDefault(
-		Options,
-		"Column Mapping",
-		F[tblColumnMapping]),
-	"Out"},
-
-	{(_) => if Record.FieldOrDefault(Options, "Buffer", false) then Table.Buffer(_) else _}
-
-})(Record.FieldOrDefault(Options, "Data Path", FolderName))
+							{"WorkBook", (rec) =>
+								if rec[Excel] then
+									//Excel.Workbook(BufferedFile, false, false)
+									Excel.Workbook(rec[Content], false, false)
+								else if rec[CSV] or rec[Zip] then
+									try
+										#table(
+											type table
+											[
+												Name = text,
+												Data = table,
+												Item = text,
+												Kind = text,
+												Hidden = logical
+											],
+											List.Transform(
+												if rec[Zip] then
+													Table.ToRows(
+														Table.SplitColumn(
+															F[LoadZip](
+																rec[Content]),
+															"File Name",
+															Splitter.SplitTextByEachDelimiter(
+																{"."},
+																QuoteStyle.Csv,
+																true),
+															{"Name"}))
+												else
+													{{null, rec[Content]}},
+												each {
+														List.First(_), Csv.Document(List.Last(_), [
+															Encoding=Record.FieldOrDefault(Options, "Encoding", 65001),
+															QuoteStyle=Record.FieldOrDefault(Options, "QuoteStyle", QuoteStyle.None),
+															Delimiter=Record.FieldOrDefault(Options, "Delimiter", ","),
+															Columns=Record.FieldOrDefault(Options, "Columns", null)]), null, "Text Document", false})
+											)
+									otherwise
+										null
+								else
+									null, type table}
+						})},
+            {Table.ExpandTableColumn, "WorkBook", {"Name", "Data", "Item", "Kind"}, {"Name", "Data", "Item", "Kind"}},
+            {F[RenameColumnsByMapping], Record.FieldOrDefault(Options, "Column Mapping", F[tblColumnMapping]), "Out"},
+            {(_) => if Record.FieldOrDefault(Options, "Buffer", false) then Table.Buffer(_) else _}
+        }
+    )(Record.FieldOrDefault(Options, "Data Path", FolderName))
