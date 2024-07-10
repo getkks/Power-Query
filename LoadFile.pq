@@ -95,7 +95,7 @@ F[FP][ChainOperations](
 							{"WorkBook", (rec) =>
 								if rec[Excel] then
 									//Excel.Workbook(BufferedFile, false, false)
-									Excel.Workbook(rec[Content], false, false)
+									Excel.Workbook(rec[Content], false, true)
 								else if rec[CSV] or rec[Zip] then
 									try
 										#table(
